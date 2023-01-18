@@ -50,13 +50,7 @@ function write-pslog {
         [Parameter(Mandatory,ValueFromPipeline)]
         [psobject[]]$Message
         )
-<#
-[Parameter(Mandatory,ValueFromPipeline,ValueFromPipelineByPropertyName)]
-[Alias('DisplayName','Name')]
-[string[]]$Message
-)
 
-#>
         $VerbosePreference="Continue"
         $InformationPreference="Continue"
         $DebugPreference="Continue"
@@ -78,15 +72,8 @@ function write-pslog {
         }
     }
 
-    #$test = @($Message | ForEach-Object {$_}).count
-    $test = $Message | fl
-
     $TimeStamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
-    $LogMessage = "$TimeStamp [$($OutStream.ToLower())] $test"
-    #$LogMessage = "$TimeStamp [$($OutStream.ToLower())] $Message"
-    
-    # $requestedLogLevel = [LogLevels]$OutStream
-
+    $LogMessage = "$TimeStamp [$($OutStream.ToLower())] $Message"
 
     if($Global:LogLevel -gt $LogLevels[$OutStream]) {
         & "Write-${OutStream}" $LogMessage
