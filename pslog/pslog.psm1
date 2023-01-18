@@ -6,17 +6,9 @@ function set-pslog {
         [ValidateSet("Error","Warning","Information","Verbose","Debug")]
         [string]$LogLevel
     )
-
-    if (!$Global:LogFile) {
-        $Global:Logfile = "$($env:TEMP)\$(Get-Date -Format FileDateTime)_pslog.log"
-    }
-
+    
     if ($LogFile) {
         $Global:LogFile = $LogFile
-    }
-
-    if (!$Global:LogLevel) {
-        $Global:LogLevel = 3
     }
 
     if ($LogLevel) {
@@ -34,21 +26,50 @@ function get-pslog {
     [CmdletBinding()]
     param (
     )
+    
+    try {
+        Get-Variable LogFile -ErrorAction Stop
+    } catch {
+        Write-Output "`$Global:LogFile not set"
+    }
 
-    Get-Variable LogFile
-    Get-Variable LogLevel
+    try {
+        Get-Variable LogLevel -ErrorAction Stop
+    } catch {
+        Write-Output "`$Global:LogLevel not set"
+    }
 }
 
 function write-pslog {
     
     [CmdletBinding()]
     param (
-        [ValidateSet("Error","Warning","Verbose","Debug","Information")]
+        [ValidateSet("Error","Warning","Information","Verbose","Debug")]
         [string]$OutStream = "Information",
-        [string]$Message
-    )
+        
+        [Parameter(Mandatory,ValueFromPipeline)]
+        [psobject[]]$Message
+        )
+<#
+[Parameter(Mandatory,ValueFromPipeline,ValueFromPipelineByPropertyName)]
+[Alias('DisplayName','Name')]
+[string[]]$Message
+)
 
-    if (!(Test-Path $Global:LogFile)) {
+#>
+        $VerbosePreference="Continue"
+        $InformationPreference="Continue"
+        $DebugPreference="Continue"
+
+        $LogLevels = @{
+            Error       = 0
+            Warning     = 1
+            Information = 2
+            Verbose     = 3
+            Debug       = 4
+        }
+
+        if (!(Test-Path $Global:LogFile)) {
 
         try {
             New-Item $Global:LogFile -Force -ErrorAction Stop | Out-Null
@@ -57,48 +78,22 @@ function write-pslog {
         }
     }
 
+    #$test = @($Message | ForEach-Object {$_}).count
+    $test = $Message | fl
+
     $TimeStamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
-    $LogMessage = "$TimeStamp [$($OutStream.ToLower())] $Message"
-    switch($OutStream) {
-        "Error" {if ($Global:LogLevel -gt 0) {
-            Write-Error $LogMessage
-            try {
-                Add-Content -Path $Global:LogFile -Value $LogMessage -ErrorAction Stop
-            } catch {
-                $_.Exception.Message
-            }
-        }}
-        "Warning" {if ($Global:LogLevel -gt 1) {
-            Write-Warning $LogMessage
-            try {
-                Add-Content -Path $Global:LogFile -Value $LogMessage -ErrorAction Stop
-            } catch {
-                $_.Exception.Message
-            }
-        }}
-        "Information"  {if ($Global:LogLevel -gt 2) {
-            Write-Information $LogMessage -InformationAction Continue
-            try {
-                Add-Content -Path $Global:LogFile -Value $LogMessage -ErrorAction Stop
-            } catch {
-                $_.Exception.Message
-            }
-        }}
-        "Verbose" {if ($Global:LogLevel -gt 3) {
-            Write-Verbose $LogMessage -Verbose
-            try {
-                Add-Content -Path $Global:LogFile -Value $LogMessage -ErrorAction Stop
-            } catch {
-                $_.Exception.Message
-            }
-        }}
-        "Debug"  {if ($Global:LogLevel -gt 4) {
-            Write-Debug $LogMessage -Debug
-            try {
-                Add-Content -Path $Global:LogFile -Value $LogMessage -ErrorAction Stop
-            } catch {
-                $_.Exception.Message
-            }
-        }}
+    $LogMessage = "$TimeStamp [$($OutStream.ToLower())] $test"
+    #$LogMessage = "$TimeStamp [$($OutStream.ToLower())] $Message"
+    
+    # $requestedLogLevel = [LogLevels]$OutStream
+
+
+    if($Global:LogLevel -gt $LogLevels[$OutStream]) {
+        & "Write-${OutStream}" $LogMessage
+        try {
+            Add-Content -Path $Global:LogFile -Value $LogMessage -ErrorAction Stop 
+        } catch {
+            $_.Exception.Message
+        }
     }
 }
