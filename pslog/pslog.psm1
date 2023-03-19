@@ -1,6 +1,7 @@
 function set-pslog {
     [CmdletBinding()]
     param (
+        [ValidateScript({Test-Path (Split-Path -Parent $_)})]
         [string]$LogFile,
 
         [ValidateSet("Error","Warning","Information","Verbose","Debug")]
@@ -30,13 +31,13 @@ function get-pslog {
     try {
         Get-Variable LogFile -ErrorAction Stop
     } catch {
-        Write-Output "`$Global:LogFile not set"
+        Write-Warning "`$Global:LogFile not set"
     }
 
     try {
         Get-Variable LogLevel -ErrorAction Stop
     } catch {
-        Write-Output "`$Global:LogLevel not set"
+        Write-Warning "`$Global:LogLevel not set"
     }
 }
 
@@ -44,34 +45,37 @@ function write-pslog {
     
     [CmdletBinding()]
     param (
-        [ValidateSet("Error","Warning","Information","Verbose","Debug")]
-        [string]$OutStream = "Information",
-        
         [Parameter(Mandatory,ValueFromPipeline)]
-        [psobject[]]$Message
-        )
+        [psobject[]]$Message,
 
-        $VerbosePreference="Continue"
-        $InformationPreference="Continue"
-        $DebugPreference="Continue"
+        [ValidateSet("Error","Warning","Information","Verbose","Debug")]
+        [string]$OutStream = "Information"
+    )
 
-        $LogLevels = @{
-            Error       = 0
-            Warning     = 1
-            Information = 2
-            Verbose     = 3
-            Debug       = 4
-        }
+    $VerbosePreference="Continue"
+    $InformationPreference="Continue"
+    $DebugPreference="Continue"
 
-        if (!(Test-Path $Global:LogFile)) {
-
-        try {
-            New-Item $Global:LogFile -Force -ErrorAction Stop | Out-Null
-        } catch {
-            $_.Exception.Message
-        }
+    $LogLevels = @{
+        Error       = 0
+        Warning     = 1
+        Information = 2
+        Verbose     = 3
+        Debug       = 4
     }
 
+    try {
+        if (!(Test-Path $Global:LogFile -ErrorAction Stop)) {
+            try {
+                New-Item $Global:LogFile -Force -ErrorAction Stop | Out-Null
+            } catch {
+                $_.Exception.Message
+            }
+        }
+    } catch {
+        throw "Global variable 'LogFile' does not exist.  Must run set-pslog first!"
+    }
+        
     $TimeStamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
     $LogMessage = "$TimeStamp [$($OutStream.ToLower())] $Message"
 
