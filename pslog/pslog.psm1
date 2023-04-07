@@ -45,11 +45,11 @@ function write-pslog {
     
     [CmdletBinding()]
     param (
-        [Parameter(Mandatory,ValueFromPipeline)]
-        [psobject[]]$Message,
-
         [ValidateSet("Error","Warning","Information","Verbose","Debug")]
-        [string]$OutStream = "Information"
+        [string]$OutStream = "Information",
+
+        [Parameter(Mandatory,ValueFromPipeline)]
+        [psobject[]]$Message
     )
 
     $VerbosePreference="Continue"
@@ -73,11 +73,19 @@ function write-pslog {
             }
         }
     } catch {
-        throw "Global variable 'LogFile' does not exist.  Must run set-pslog first!"
+        try {            
+            set-pslog -LogFile "$home/pslog_$(get-date -Format FileDateTime)"
+        } catch {
+            throw "Global logfile location undefined.  Failed to set default at `$home"
+        }
     }
         
     $TimeStamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
     $LogMessage = "$TimeStamp [$($OutStream.ToLower())] $Message"
+
+    if (!$Global:LogLevel) {
+        set-pslog -LogLevel Information
+    }
 
     if($Global:LogLevel -gt $LogLevels[$OutStream]) {
         & "Write-${OutStream}" $LogMessage
