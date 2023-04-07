@@ -1,22 +1,15 @@
 function set-pslog {
     [CmdletBinding()]
     param (
+        [ValidateScript({Test-Path (Split-Path -Parent $_)})]
         [string]$LogFile,
 
         [ValidateSet("Error","Warning","Information","Verbose","Debug")]
         [string]$LogLevel
     )
-
-    if (!$Global:LogFile) {
-        $Global:Logfile = "$($env:TEMP)\$(Get-Date -Format FileDateTime)_pslog.log"
-    }
-
+    
     if ($LogFile) {
         $Global:LogFile = $LogFile
-    }
-
-    if (!$Global:LogLevel) {
-        $Global:LogLevel = 3
     }
 
     if ($LogLevel) {
@@ -34,71 +27,72 @@ function get-pslog {
     [CmdletBinding()]
     param (
     )
+    
+    try {
+        Get-Variable LogFile -ErrorAction Stop
+    } catch {
+        Write-Warning "`$Global:LogFile not set"
+    }
 
-    Get-Variable LogFile
-    Get-Variable LogLevel
+    try {
+        Get-Variable LogLevel -ErrorAction Stop
+    } catch {
+        Write-Warning "`$Global:LogLevel not set"
+    }
 }
 
 function write-pslog {
     
     [CmdletBinding()]
     param (
-        [ValidateSet("Error","Warning","Verbose","Debug","Information")]
+        [ValidateSet("Error","Warning","Information","Verbose","Debug")]
         [string]$OutStream = "Information",
-        [string]$Message
+
+        [Parameter(Mandatory,ValueFromPipeline)]
+        [psobject[]]$Message
     )
 
-    if (!(Test-Path $Global:LogFile)) {
+    $VerbosePreference="Continue"
+    $InformationPreference="Continue"
+    $DebugPreference="Continue"
 
+    $LogLevels = @{
+        Error       = 0
+        Warning     = 1
+        Information = 2
+        Verbose     = 3
+        Debug       = 4
+    }
+
+    try {
+        if (!(Test-Path $Global:LogFile -ErrorAction Stop)) {
+            try {
+                New-Item $Global:LogFile -Force -ErrorAction Stop | Out-Null
+            } catch {
+                $_.Exception.Message
+            }
+        }
+    } catch {
+        try {            
+            set-pslog -LogFile "$home/pslog_$(get-date -Format FileDateTime)"
+        } catch {
+            throw "Global logfile location undefined.  Failed to set default at `$home"
+        }
+    }
+        
+    $TimeStamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+    $LogMessage = "$TimeStamp [$($OutStream.ToLower())] $Message"
+
+    if (!$Global:LogLevel) {
+        set-pslog -LogLevel Information
+    }
+
+    if($Global:LogLevel -gt $LogLevels[$OutStream]) {
+        & "Write-${OutStream}" $LogMessage
         try {
-            New-Item $Global:LogFile -Force -ErrorAction Stop | Out-Null
+            Add-Content -Path $Global:LogFile -Value $LogMessage -ErrorAction Stop 
         } catch {
             $_.Exception.Message
         }
-    }
-
-    $TimeStamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
-    $LogMessage = "$TimeStamp [$($OutStream.ToLower())] $Message"
-    switch($OutStream) {
-        "Error" {if ($Global:LogLevel -gt 0) {
-            Write-Error $LogMessage
-            try {
-                Add-Content -Path $Global:LogFile -Value $LogMessage -ErrorAction Stop
-            } catch {
-                $_.Exception.Message
-            }
-        }}
-        "Warning" {if ($Global:LogLevel -gt 1) {
-            Write-Warning $LogMessage
-            try {
-                Add-Content -Path $Global:LogFile -Value $LogMessage -ErrorAction Stop
-            } catch {
-                $_.Exception.Message
-            }
-        }}
-        "Information"  {if ($Global:LogLevel -gt 2) {
-            Write-Information $LogMessage -InformationAction Continue
-            try {
-                Add-Content -Path $Global:LogFile -Value $LogMessage -ErrorAction Stop
-            } catch {
-                $_.Exception.Message
-            }
-        }}
-        "Verbose" {if ($Global:LogLevel -gt 3) {
-            Write-Verbose $LogMessage -Verbose
-            try {
-                Add-Content -Path $Global:LogFile -Value $LogMessage -ErrorAction Stop
-            } catch {
-                $_.Exception.Message
-            }
-        }}
-        "Debug"  {if ($Global:LogLevel -gt 4) {
-            Write-Debug $LogMessage -Debug
-            try {
-                Add-Content -Path $Global:LogFile -Value $LogMessage -ErrorAction Stop
-            } catch {
-                $_.Exception.Message
-            }
-        }}
     }
 }
