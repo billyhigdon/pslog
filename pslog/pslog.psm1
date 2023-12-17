@@ -87,19 +87,12 @@ function write-pslog {
         set-pslog -LogLevel Information
     }
 
+    $MessageString = $Message | Out-String
+
     if($Global:LogLevel -gt $LogLevels[$OutStream]) {
         try {
-            if ($Message.count -gt 1) {
-                $Message = $Message | Out-String
-                # This doesn't work if I 'WRite-Infomration' - tech debt
-                Write-Output $Message
-                Add-Content -Path $Global:LogFile -Value "$TimeStamp [$($OutStream.ToLower())]" -ErrorAction Stop 
-                Add-Content -Path $Global:LogFile -Value "$Message" -ErrorAction Stop 
-            } else {
-
-                & "Write-${OutStream}" $Message
-                Add-Content -Path $Global:LogFile -Value "$TimeStamp [$($OutStream.ToLower())] $Message" -ErrorAction Stop 
-            }
+                & "Write-${OutStream}" $MessageString
+                Add-Content -Path $Global:LogFile -Value "$TimeStamp [$($OutStream.ToLower())] $MessageString" -ErrorAction Stop 
         } catch {
             $_.Exception.Message
         }
