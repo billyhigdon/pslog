@@ -1,7 +1,8 @@
 function set-pslog {
+    
     [CmdletBinding()]
     param (
-        [ValidateScript({Test-Path (Split-Path -Parent $_)})]
+        [ValidateScript({Test-Path (Split-Path -Parent $_)}, ErrorMessage="Invalid path")]
         [string]$LogFile,
 
         [ValidateSet("Error","Warning","Information","Verbose","Debug")]
@@ -24,6 +25,7 @@ function set-pslog {
 }
 
 function get-pslog {
+
     [CmdletBinding()]
     param (
     )
@@ -69,7 +71,7 @@ function write-pslog {
             try {
                 New-Item $Global:LogFile -Force -ErrorAction Stop | Out-Null
             } catch {
-                $_.Exception.Message
+                throw $_.Exception.Message
             }
         }
     } catch {
@@ -82,7 +84,6 @@ function write-pslog {
         
     $TimeStamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
 
-
     if (!$Global:LogLevel) {
         set-pslog -LogLevel Information
     }
@@ -91,8 +92,8 @@ function write-pslog {
 
     if($Global:LogLevel -gt $LogLevels[$OutStream]) {
         try {
-                & "Write-${OutStream}" $MessageString
-                Add-Content -Path $Global:LogFile -Value "$TimeStamp [$($OutStream.ToLower())] $MessageString" -ErrorAction Stop 
+            & "Write-${OutStream}" $MessageString
+            Add-Content -Path $Global:LogFile -Value "$TimeStamp [$($OutStream.ToLower())] $MessageString" -ErrorAction Stop 
         } catch {
             $_.Exception.Message
         }
