@@ -1,7 +1,8 @@
 function set-pslog {
+    
     [CmdletBinding()]
     param (
-        [ValidateScript({Test-Path (Split-Path -Parent $_)})]
+        [ValidateScript({Test-Path (Split-Path -Parent $_)}, ErrorMessage="Invalid path")]
         [string]$LogFile,
 
         [ValidateSet("Error","Warning","Information","Verbose","Debug")]
@@ -24,6 +25,7 @@ function set-pslog {
 }
 
 function get-pslog {
+
     [CmdletBinding()]
     param (
     )
@@ -64,12 +66,14 @@ function write-pslog {
         Debug       = 4
     }
 
+    # this try catch should only handle errors - it should be modified to an if/else for if the global LogFile is not defined
+    # then we can set it to the default home location
     try {
         if (!(Test-Path $Global:LogFile -ErrorAction Stop)) {
             try {
                 New-Item $Global:LogFile -Force -ErrorAction Stop | Out-Null
             } catch {
-                $_.Exception.Message
+                Write-Error $_.Exception.Message
             }
         }
     } catch {
@@ -81,7 +85,7 @@ function write-pslog {
     }
         
     $TimeStamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
-    $LogMessage = "$TimeStamp [$($OutStream.ToLower())] $Message"
+    $LogMessage = "$TimeStamp [$($OutStream.ToLower())] $($Message | Out-String)"
 
     if (!$Global:LogLevel) {
         set-pslog -LogLevel Information
@@ -89,10 +93,13 @@ function write-pslog {
 
     if($Global:LogLevel -gt $LogLevels[$OutStream]) {
         & "Write-${OutStream}" $LogMessage
+
         try {
-            Add-Content -Path $Global:LogFile -Value $LogMessage -ErrorAction Stop 
+            $PSStyle.OutputRendering = [System.Management.Automation.OutputRendering]::PlainText
+            $LogMessage | Out-File -FilePath $Global:LogFile -Append -NoNewline -ErrorAction Stop
+            $PSStyle.OutputRendering = [System.Management.Automation.OutputRendering]::Ansi
         } catch {
-            $_.Exception.Message
+            Write-Error $_.Exception.Message
         }
     }
 }
