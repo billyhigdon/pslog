@@ -2,17 +2,13 @@ function Write-PSLog {
     <#
     .SYNOPSIS
     Write a message to console and/or appends to the pslog logfile
-
     .DESCRIPTION
     Writes a timestamped message to the console using the corresponding Write-* stream
     and appends the message to the configured logfile if the set log level permits it.
-
     .PARAMETER OutStream
     Error, Warning, Information, Verbose, Debug
-
     .PARAMETER Message
     The message to write (accepts pipeline input).
-    
     .EXAMPLE
     'Hello' | Write-PSLog -OutStream Information
     #>
