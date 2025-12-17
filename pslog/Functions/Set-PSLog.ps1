@@ -14,7 +14,9 @@ function Set-PSLog {
     #>
     [CmdletBinding()]
     param (
-        [ValidateScript({Test-Path (Split-Path -Parent $_)}, ErrorMessage='Invalid path')]
+        # ValidateScript on older PowerShell versions doesn't accept an ErrorMessage named
+        # parameter; keep validation attribute minimal and perform a clearer check below.
+        [ValidateScript({ Test-Path (Split-Path -Parent $_) })]
         [string]$LogFile,
 
         [ValidateSet('Error','Warning','Information','Verbose','Debug')]
@@ -25,6 +27,11 @@ function Set-PSLog {
     )
 
     if ($LogFile) {
+        # perform an explicit check to provide a clear error on invalid paths
+        if (-not (Test-Path (Split-Path -Parent $LogFile))) {
+            throw [System.ArgumentException] "Invalid path: parent directory does not exist"
+        }
+
         $Global:LogFile = $LogFile
     }
 
