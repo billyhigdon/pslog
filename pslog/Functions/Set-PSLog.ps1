@@ -11,14 +11,17 @@ function Set-PSLog {
     .EXAMPLE
     Set-PSLog -LogFile "$home/pslog.log" -LogLevel Information
     # Sets the global logfile and log level
-    #>ß
+    #>
     [CmdletBinding()]
     param (
         [ValidateScript({Test-Path (Split-Path -Parent $_)}, ErrorMessage='Invalid path')]
         [string]$LogFile,
 
         [ValidateSet('Error','Warning','Information','Verbose','Debug')]
-        [string]$LogLevel
+        [string]$LogLevel,
+
+        [switch]
+        $LogOnly
     )
 
     if ($LogFile) {
@@ -34,5 +37,9 @@ function Set-PSLog {
             'Verbose' { 3 }
             'Debug' { 4 }
         }
+    }
+
+    if ($PSBoundParameters.ContainsKey('LogOnly')) {
+        $Global:LogOnly = [bool]$LogOnly
     }
 }

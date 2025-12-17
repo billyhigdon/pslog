@@ -70,4 +70,11 @@ Describe "Set-PSLog" {
         $Global:LogLevel | Should -Be 3
         $Global:LogFile | Should -Be $TempLog
     }
+
+    It 'should set LogOnly when the switch is passed' {
+        Set-PSLog -LogOnly
+        $Global:LogOnly | Should -BeTrue
+        # clear for other tests
+        Remove-Variable -Name LogOnly -Scope Global -ErrorAction SilentlyContinue
+    }
 }

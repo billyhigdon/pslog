@@ -21,5 +21,5 @@ if (Test-Path (Join-Path $Script:ModuleRoot 'Private')) {
 }
 
 # Explicitly export the public functions (also listed in the manifest)
-Export-ModuleMember -Function 'Get-PSLog','Set-PSLog','Write-PSLog'
+Export-ModuleMember -Function 'Get-PSLog','Set-PSLog','Write-PSLog','Remove-PSLog'
 

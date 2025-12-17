@@ -37,10 +37,9 @@ function Write-PSLog {
     }
 
     Process {
-        $items = @()
-        if ($null -eq $Message) {
-            $items = @()
-        } elseif ($Message -is [System.Collections.IEnumerable] -and -not ($Message -is [string])) {
+        # Treat $Message as a single pipeline item even when it's $null.
+        # If $Message is an enumerable (but not a string), iterate its members; otherwise wrap it as a single item.
+        if ($Message -is [System.Collections.IEnumerable] -and -not ($Message -is [string])) {
             $items = $Message
         } else {
             $items = @($Message)
@@ -55,12 +54,15 @@ function Write-PSLog {
             }
 
             if ($Global:LogLevel -ge $LogLevels[$OutStream]) {
-                switch ($OutStream) {
-                    'Error'       { Write-Error -Message $LogMessage }
-                    'Warning'     { Write-Warning $LogMessage }
-                    'Information' { Write-Information -MessageData $LogMessage -InformationAction Continue }
-                    'Verbose'     { Write-Verbose $LogMessage }
-                    'Debug'       { Write-Debug $LogMessage }
+                # If LogOnly is set, skip console writes but still write to the logfile
+                if (-not ($Global:LogOnly)) {
+                    switch ($OutStream) {
+                        'Error'       { Write-Error -Message $LogMessage }
+                        'Warning'     { Write-Warning $LogMessage }
+                        'Information' { Write-Information -MessageData $LogMessage -InformationAction Continue }
+                        'Verbose'     { Write-Verbose $LogMessage }
+                        'Debug'       { Write-Debug $LogMessage }
+                    }
                 }
 
                 try {

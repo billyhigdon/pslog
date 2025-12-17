@@ -3,22 +3,50 @@ function Get-PSLog {
     .SYNOPSIS
     Show pslog global settings
     .DESCRIPTION
-    Writes warnings if the global LogFile or LogLevel variables are not set.
     .EXAMPLE
     Get-PSLog
     #>    
     [CmdletBinding()]
     param ()
+    $hasLogFile = $false
+    $hasLogLevel = $false
+    $hasLogOnly = $false
 
     try {
-        Get-Variable LogFile -ErrorAction Stop
+        Get-Variable LogFile -Scope Global -ErrorAction Stop | Out-Null
+        $hasLogFile = $true
     } catch {
-        Write-Warning "`$Global:LogFile not set"
     }
 
     try {
-        Get-Variable LogLevel -ErrorAction Stop
+        Get-Variable LogLevel -Scope Global -ErrorAction Stop | Out-Null
+        $hasLogLevel = $true
     } catch {
-        Write-Warning "`$Global:LogLevel not set"
+    }
+
+    try {
+        Get-Variable LogOnly -Scope Global -ErrorAction Stop | Out-Null
+        $hasLogOnly = $true
+    } catch {
+
+    }
+
+    # Return a simple object describing the current state for programmatic inspection
+    [PSCustomObject]@{
+        LogFile  = if ($hasLogFile) {
+            $Global:LogFile
+        } else {
+            $null 
+        }
+        LogLevel = if ($hasLogLevel) {
+            $Global:LogLevel 
+        } else {
+            $null 
+        }
+        LogOnly  = if ($hasLogOnly) {
+            [bool]$Global:LogOnly
+        } else { 
+            $false
+        }
     }
 }

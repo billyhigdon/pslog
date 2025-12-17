@@ -23,7 +23,8 @@
     FunctionsToExport = @(
         'Get-PSLog',
         'Set-PSLog',
-        'Write-PSLog'
+        'Write-PSLog',
+        'Remove-PSLog'
     )
 
     # Private data to pass to the module specified in RootModule/ModuleToProcess
