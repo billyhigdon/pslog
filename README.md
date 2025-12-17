@@ -1,6 +1,7 @@
 # pslog
 
-![image](https://user-images.githubusercontent.com/15183512/230689509-ff9a22f1-62d0-4bc3-bdaa-9916d5f597d7.png)
+<img width="1536" height="1024" alt="image" src="https://github.com/user-attachments/assets/049efe4f-5192-4d7e-b022-bca0b24c5b93" />
+
 
 Simple PowerShell logging written by a simple person.  :shrug:
 
