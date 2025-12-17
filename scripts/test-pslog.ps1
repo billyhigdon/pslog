@@ -25,11 +25,13 @@ function Assert($Condition, [string]$Message) {
 
 Write-Host "Importing pslog module..."
 # script lives at ./scripts, module manifest lives at ./pslog/pslog.psd1
-Import-Module (Join-Path $PSScriptRoot '..' 'pslog' 'pslog.psd1') -Force -ErrorAction Stop
+# Use nested Join-Path for PowerShell 5 compatibility
+Import-Module (Join-Path (Join-Path (Join-Path $PSScriptRoot '..') 'pslog') 'pslog.psd1') -Force -ErrorAction Stop
 
 Write-Host "Running unit tests (Pester)..."
 try {
-    $pester = Invoke-Pester -Script (Join-Path $PSScriptRoot '..' 'pslog' 'Tests') -Output Detailed -PassThru -ErrorAction Stop
+    # Use nested Join-Path for PowerShell 5 compatibility
+    $pester = Invoke-Pester -Script (Join-Path (Join-Path $PSScriptRoot '..') 'pslog' 'Tests') -Output Detailed -PassThru -ErrorAction Stop
 } catch {
     Fail "Pester run failed: $($_.Exception.Message)"
 }

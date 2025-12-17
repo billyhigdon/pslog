@@ -1,5 +1,6 @@
 BeforeAll {
-    Import-Module (Join-Path $PSScriptRoot '..' 'pslog.psd1') -Force
+    # Use nested Join-Path for PowerShell 5 compatibility
+    Import-Module (Join-Path (Join-Path $PSScriptRoot '..') 'pslog.psd1') -Force
 }
 
 Describe 'Remove-PSLog' {
