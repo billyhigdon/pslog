@@ -30,8 +30,21 @@ Import-Module (Join-Path (Join-Path (Join-Path $PSScriptRoot '..') 'pslog') 'psl
 
 Write-Host "Running unit tests (Pester)..."
 try {
-    # Use nested Join-Path for PowerShell 5 compatibility
-    $pester = Invoke-Pester -Script (Join-Path (Join-Path $PSScriptRoot '..') 'pslog' 'Tests') -Output Detailed -PassThru -ErrorAction Stop
+    # Build tests path with nested Join-Path calls for PS5 compatibility
+    $psRoot = Join-Path $PSScriptRoot '..'
+    $moduleDir = Join-Path -Path $psRoot -ChildPath 'pslog'
+    $testsDir = Join-Path -Path $moduleDir -ChildPath 'Tests'
+
+    # Invoke Pester in a way that is compatible across Pester versions
+    $invokeCmd = Get-Command Invoke-Pester -ErrorAction SilentlyContinue
+    if ($invokeCmd -and $invokeCmd.Parameters.ContainsKey('Script')) {
+        $pester = Invoke-Pester -Script $testsDir -Output Detailed -PassThru -ErrorAction Stop
+    } elseif ($invokeCmd -and $invokeCmd.Parameters.ContainsKey('Path')) {
+        $pester = Invoke-Pester -Path $testsDir -Output Detailed -PassThru -ErrorAction Stop
+    } else {
+        # Last resort: pass the path positionally
+        $pester = Invoke-Pester $testsDir -Output Detailed -PassThru -ErrorAction Stop
+    }
 } catch {
     Fail "Pester run failed: $($_.Exception.Message)"
 }
